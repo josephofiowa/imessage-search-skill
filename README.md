@@ -4,7 +4,7 @@
 
 `imessage-search-skill` is LLM skill that lets you search your entire iMessage history using natural language. Describe what you're looking for — a half-remembered conversation ("Who did I talk to about visiting my office last month?"), a specific thing someone said ("When did [number] and I plan on biking?"), a person you texted about a topic — and the LLM finds it.
 
-It **does not know** the names / contacts of people (yet), so reference phone numbers.
+The skill does not know names. You must reference conversations by phone number. It does not connect to your local Contacts app to link names and numbers.
 
 <video src="https://github.com/user-attachments/assets/3af780c3-0786-4f0b-b69a-d975f62dfbed" controls width="100%"></video>
 
@@ -111,7 +111,7 @@ Point your LLM at the `SKILL.md` file in this repo. The skill is written to be L
 ## Privacy
 
 - **Everything stays on your Mac.** The export files are saved to your Downloads folder and never leave your computer (unless your LLM tool sends data to an API — check your tool's privacy settings).
-- **Full Disk Access** is a standard macOS permission. You can revoke it at any time in System Settings → Privacy & Security → Full Disk Access.
+- **Full Disk Access** is a standard macOS permission. This Skill needs it because it first exports the local database of your messages into something it can index. You can revoke it at any time in System Settings → Privacy & Security → Full Disk Access.
 - **The skill does not access your Contacts.** You'll see phone numbers and emails, not names.
 
 ## File structure
