@@ -4,7 +4,7 @@
 
 `imessage-search-skill` is LLM skill that lets you search your entire iMessage history using natural language. Describe what you're looking for — a half-remembered conversation ("Who did I talk to about visiting my office last month?"), a specific thing someone said ("When did [number] and I plan on biking?"), a person you texted about a topic — and the LLM finds it.
 
-The skill does not know names. You must reference conversations by phone number. It does not connect to your local Contacts app to link names and numbers.
+**Messages remain local to your machine.** The skill also does not connect to Contacts, so you must reference conversations/people by phone number.
 
 <video src="https://github.com/user-attachments/assets/3af780c3-0786-4f0b-b69a-d975f62dfbed" controls width="100%"></video>
 
