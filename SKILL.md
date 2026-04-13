@@ -38,19 +38,38 @@ The workflow has three phases:
 
 ## Phase 1: Setup & Export
 
-### Step 1: Check if an export already exists
+### Step 1: Check if an export already exists and whether it needs refreshing
 
-Before doing anything, check whether a previous export already exists:
+Before doing anything, check whether a previous export exists and how fresh it is:
 
 ```bash
-ls ~/Downloads/imessage_export/
+ls ~/Downloads/imessage_export/conversations_index.json 2>/dev/null && python3 -c "
+import json, os
+with open(os.path.expanduser('~/Downloads/imessage_export/conversations_index.json')) as f:
+    data = json.load(f)
+print('EXPORTED_AT:', data.get('exported_at', 'unknown'))
+print('TOTAL_CONVERSATIONS:', data.get('total_conversations', 0))
+print('TOTAL_MESSAGES:', data.get('total_messages', 0))
+" || echo "NO_EXPORT_FOUND"
 ```
 
-If the directory exists and contains `conversations_index.json`, ask the user:
-"I found an existing iMessage export from [date]. Would you like to use this, or
-re-export to get the latest messages?"
+Then follow this logic:
 
-If they want to reuse it, skip to **Phase 3**.
+- **No export found** → Proceed to Step 2 (setup) and Step 3 (export).
+- **Export exists but is from a previous day** → Re-export automatically. Tell the
+  user: "I found an existing export from [date], but it's not from today. I'll refresh
+  it so we have your latest messages." Then run Steps 3–4 (skip Step 2 if Full Disk
+  Access is already granted — verify with the access check).
+- **Export exists and is from today** → Reuse it. Tell the user: "Using your iMessage
+  export from earlier today ([time]). It contains [N] conversations and [M] total
+  messages. If you want me to re-export to pick up anything from the last few hours,
+  just say 'refresh'."
+
+The goal is that the user's export is always current to at least the start of their
+session day. Messages arrive constantly, so a stale export means missed results.
+
+When reusing an existing export, always tell the user when it was last exported so
+they can decide if they need a refresh.
 
 ### Step 2: Guide the user through Full Disk Access
 
@@ -186,6 +205,10 @@ When scanning, pay attention to:
 - The overall arc of the conversation (what was the relationship/topic?)
 
 ### Step 3: Present results
+
+Before listing any results, always state when the export was last refreshed so the
+user knows the scope of what was searched. For example: "Searching messages exported
+today at 2:35 PM (142,387 total messages across 1,204 conversations)."
 
 Every result must always include these four pieces of information, regardless of what
 the user asked for. These are non-negotiable because the user needs them to identify
