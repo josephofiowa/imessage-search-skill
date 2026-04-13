@@ -129,13 +129,17 @@ def build_index(export_path, output_dir):
                 chat_name = m["chat_name"]
                 break
 
-        # Preview: last few messages (up to 5) for keyword scanning
-        recent = msgs[-5:]
+        # Count messages that have actual text content (attachments/reactions have null text)
+        text_msg_count = sum(1 for m in msgs if m.get("text") and m.get("text").strip())
+
+        # Preview: scan backwards through up to 30 recent messages to find 5 with text.
+        # Using a fixed recent slice (e.g. last 5) fails whenever recent messages are
+        # all attachment-only or tapback reactions — leaving message_previews empty and
+        # making the conversation appear to have no content in the index.
         previews = []
-        for m in recent:
+        for m in reversed(msgs[-30:]):
             text = m.get("text") or ""
-            if text:
-                # Truncate long messages in preview
+            if text.strip():
                 if len(text) > 200:
                     text = text[:200] + "..."
                 sender = "You" if m.get("is_from_me") else (m.get("contact") or "them")
@@ -144,15 +148,19 @@ def build_index(export_path, output_dir):
                     "text": text,
                     "date": m.get("date", "")[:10]
                 })
+                if len(previews) >= 5:
+                    break
 
-        # Also grab a sample of earlier messages for better keyword coverage
-        # Take up to 3 messages from the middle of the conversation
+        # Also grab a sample of earlier messages for better keyword coverage.
+        # Scan up to 15 messages around the midpoint to find 3 with text.
         if len(msgs) > 10:
             mid = len(msgs) // 2
-            mid_sample = msgs[max(0, mid-1):mid+2]
-            for m in mid_sample:
+            half_window = 7
+            mid_slice = msgs[max(0, mid - half_window):mid + half_window + 1]
+            mid_count = 0
+            for m in mid_slice:
                 text = m.get("text") or ""
-                if text:
+                if text.strip():
                     if len(text) > 150:
                         text = text[:150] + "..."
                     sender = "You" if m.get("is_from_me") else (m.get("contact") or "them")
@@ -161,6 +169,9 @@ def build_index(export_path, output_dir):
                         "text": text,
                         "date": m.get("date", "")[:10]
                     })
+                    mid_count += 1
+                    if mid_count >= 3:
+                        break
 
         # Build the filename for the conversation file
         filename = safe_filename(conv_id) + ".json"
@@ -172,6 +183,7 @@ def build_index(export_path, output_dir):
             "contacts": sorted(contacts),
             "chat_name": chat_name,
             "total_messages": total_msgs,
+            "messages_with_text": text_msg_count,
             "sent_by_you": sent_count,
             "received": received_count,
             "first_message_date": first_date,

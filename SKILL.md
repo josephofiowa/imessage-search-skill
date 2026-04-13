@@ -227,6 +227,7 @@ load first for any search. Sorted by `last_message_date` descending (most recent
   "contacts": ["+15551234567"],
   "chat_name": null,
   "total_messages": 47,
+  "messages_with_text": 39,
   "sent_by_you": 23,
   "received": 24,
   "first_message_date": "2023-03-15T09:00:00+00:00",
@@ -254,9 +255,14 @@ Field notes:
 - `contacts` — sorted list of all unique non-null `contact` values seen in this thread.
   For 1-on-1 chats: one entry. For group chats: all participant identifiers.
 - `chat_name` — only set for named group chats; `null` otherwise
-- `message_previews` — up to **5 most recent** messages plus up to **3 from the middle**
-  of the thread (sampled when `total_messages > 10`). Preview text is truncated at 200
-  chars for recent messages, 150 chars for mid-thread samples. `date` is `YYYY-MM-DD`.
+- `messages_with_text` — count of messages with non-empty text. Can be less than
+  `total_messages` when many messages are attachment-only, tapback reactions, or stickers.
+  Use this (not `total_messages`) to gauge how much searchable content a conversation has.
+- `message_previews` — up to **5 recent** text-containing messages (sampled backwards
+  through the last 30) plus up to **3 from the middle** (scanned across a 15-message
+  window around the midpoint). Only messages with actual text are included, so
+  `message_previews` may be shorter than 8 or even empty for attachment-heavy
+  conversations. `date` is `YYYY-MM-DD`; text is truncated at 200/150 chars.
 
 ---
 
