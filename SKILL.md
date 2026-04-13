@@ -136,6 +136,192 @@ The full conversation files are loaded on-demand.
 
 ---
 
+## Export Data Structure Reference
+
+**Read this section before searching.** When a user's query is complex, keyword-dense,
+or needs filtering across a large history, writing a short Python script against the
+export files is often the most efficient approach. Knowing the exact schema up-front
+means you can write those scripts immediately without inspecting the files first.
+
+The export pipeline produces three kinds of files, all under `~/Downloads/imessage_export/`.
+
+---
+
+### 1. Raw export — `~/Downloads/imessage_export_raw.json`
+
+Produced by `imessage_export.py`. One flat list of every message, unorganized.
+
+**Top-level object:**
+```json
+{
+  "exported_at": "2025-10-15T14:23:00+00:00",
+  "total_messages": 142387,
+  "text_recovered_from_attributed_body": 28461,
+  "database_path": "/Users/you/Library/Messages/chat.db",
+  "messages": [ /* array of message objects, see below */ ]
+}
+```
+
+**Each message object:**
+```json
+{
+  "id": 12345,
+  "text": "Hey, are you coming tonight?",
+  "date": "2025-10-15T14:23:00+00:00",
+  "date_read": "2025-10-15T14:25:00+00:00",
+  "is_from_me": false,
+  "service": "iMessage",
+  "has_attachments": false,
+  "contact": "+15551234567",
+  "chat_id": "chat123456",
+  "chat_name": null,
+  "group_id": null
+}
+```
+
+Field notes:
+- `text` — string or `null`. `null` means no recoverable text (attachment-only, deleted, etc.)
+- `date` / `date_read` — ISO 8601 UTC strings, or `null` for very old/malformed entries
+- `is_from_me` — `true` = you sent it; `false` = you received it
+- `service` — `"iMessage"` or `"SMS"`
+- `contact` — phone number (`"+15551234567"`) or email (`"user@example.com"`), or `null` for
+  messages you sent in a group chat where handle resolution failed
+- `chat_id` — the `chat_identifier` from the Messages DB; for 1-on-1 chats this is usually
+  the phone/email; for group chats it's an opaque identifier like `"chat123456789"`
+- `chat_name` — display name for named group chats; `null` for 1-on-1 and unnamed groups
+- `group_id` — internal UUID for group chats; `null` for 1-on-1 conversations
+- `attachments` — **only present** (not just null) when `has_attachments` is `true`:
+  ```json
+  "attachments": [
+    {
+      "filename": "~/Library/Messages/Attachments/.../photo.jpg",
+      "mime_type": "image/jpeg",
+      "name": "photo.jpg"
+    }
+  ]
+  ```
+
+---
+
+### 2. Conversation index — `~/Downloads/imessage_export/conversations_index.json`
+
+Produced by `build_index.py`. Compact summary of every conversation — this is what you
+load first for any search. Sorted by `last_message_date` descending (most recent first).
+
+**Top-level object:**
+```json
+{
+  "generated_from": "/Users/you/Downloads/imessage_export_raw.json",
+  "total_conversations": 1204,
+  "total_messages": 142387,
+  "exported_at": "2025-10-15T14:23:00+00:00",
+  "conversations": [ /* array of conversation index entries, see below */ ]
+}
+```
+
+**Each conversation index entry:**
+```json
+{
+  "conversation_id": "+15551234567",
+  "file": "+15551234567.json",
+  "contacts": ["+15551234567"],
+  "chat_name": null,
+  "total_messages": 47,
+  "sent_by_you": 23,
+  "received": 24,
+  "first_message_date": "2023-03-15T09:00:00+00:00",
+  "last_message_date": "2025-10-14T21:30:00+00:00",
+  "date_range_display": "Mar 2023 – Oct 2025",
+  "has_attachments": true,
+  "message_previews": [
+    {
+      "sender": "You",
+      "text": "Sounds great, see you Thursday!",
+      "date": "2025-10-14"
+    },
+    {
+      "sender": "+15551234567",
+      "text": "Perfect, I'll bring the documents",
+      "date": "2025-10-13"
+    }
+  ]
+}
+```
+
+Field notes:
+- `conversation_id` — the grouping key; equals `chat_id` when available, else `contact`
+- `file` — filename (not full path) of the conversation file inside `conversations/`
+- `contacts` — sorted list of all unique non-null `contact` values seen in this thread.
+  For 1-on-1 chats: one entry. For group chats: all participant identifiers.
+- `chat_name` — only set for named group chats; `null` otherwise
+- `message_previews` — up to **5 most recent** messages plus up to **3 from the middle**
+  of the thread (sampled when `total_messages > 10`). Preview text is truncated at 200
+  chars for recent messages, 150 chars for mid-thread samples. `date` is `YYYY-MM-DD`.
+
+---
+
+### 3. Individual conversation files — `~/Downloads/imessage_export/conversations/{file}`
+
+One file per conversation. The `file` field in the index entry gives the filename.
+Load these on-demand when a conversation is a search candidate.
+
+**Full structure:**
+```json
+{
+  "conversation_id": "+15551234567",
+  "contacts": ["+15551234567"],
+  "chat_name": null,
+  "total_messages": 47,
+  "messages": [ /* array of full message objects — same schema as the raw export */ ]
+}
+```
+
+The `messages` array contains the same fields as the raw export (see schema above),
+sorted chronologically by `date` ascending. There are no additional fields.
+
+---
+
+### Writing custom search scripts
+
+When the user's query warrants it (many conversations to scan, complex filtering,
+keyword extraction across the full history), write a Python script rather than loading
+files one by one. Key patterns:
+
+```python
+import json, re
+from pathlib import Path
+
+INDEX = Path.home() / "Downloads/imessage_export/conversations_index.json"
+CONV_DIR = Path.home() / "Downloads/imessage_export/conversations"
+
+# Load the index (always start here)
+index = json.loads(INDEX.read_text())
+
+# Filter index entries first (fast — no file I/O per conversation)
+candidates = [
+    c for c in index["conversations"]
+    if c["total_messages"] < 30
+    and c["last_message_date"] < "2025-01-01T00:00:00+00:00"
+]
+
+# Then load full threads only for candidates
+for entry in candidates:
+    conv = json.loads((CONV_DIR / entry["file"]).read_text())
+    for msg in conv["messages"]:
+        text = msg.get("text") or ""
+        # ... your filtering logic here
+```
+
+Things to remember when scripting:
+- `text` can be `null` — always guard with `msg.get("text") or ""`
+- Dates are ISO 8601 strings — lexicographic comparison works for range filtering
+- `is_from_me` is a bool — filter sent vs. received messages with `== True` / `== False`
+- For keyword search, `re.search(pattern, text, re.IGNORECASE)` is the right tool
+- The raw export (`imessage_export_raw.json`) is useful when you need to search across
+  all messages in one pass without caring about conversation grouping
+
+---
+
 ## Phase 2: Understanding the user's query
 
 Before scanning, make sure you understand what the user is looking for. Their query
