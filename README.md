@@ -1,5 +1,7 @@
 # Search your iMessages with Claude Code & Codex
 
+**tl;dr this is the iMessage search you wish Apple made**
+
 `imessage-search-skill` is LLM skill that lets you search your entire iMessage history using natural language. Describe what you're looking for — a half-remembered conversation ("Who did I talk to about visiting my office last month?"), a specific thing someone said ("When did [number] and I plan on biking?"), a person you texted about a topic — and the LLM finds it.
 
 It **does not know** the names / contacts of people (yet), so reference phone numbers.
