@@ -1,4 +1,4 @@
-# Search your iMessages Locally with Claude Code & Codex
+# Search your iMessages locally with Claude Code / Codex
 
 **tl;dr this is the iMessage search you wish Apple made**
 
