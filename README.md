@@ -26,7 +26,7 @@ The skill exports your iMessage database, indexes all your conversations, and th
 
 - **macOS** (this only works on Macs — iMessage data is stored locally)
 - **Python 3.7+** (comes pre-installed on most Macs)
-- An LLM tool that supports skills — [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Codex, or similar
+- An LLM tool that supports skills — [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex), or similar
 
 ## Quick Start
 
@@ -43,6 +43,48 @@ The skill exports your iMessage database, indexes all your conversations, and th
    ```
 
 3. Claude will walk you through setup (one-time) and then search your messages.
+
+### Using with Codex CLI
+
+Codex supports the same skill format. There are three ways to install, pick whichever you're most comfortable with:
+
+**Option A: Use the built-in skill installer (easiest)**
+
+Open Codex in your terminal and type:
+```
+$skill-installer install https://github.com/josephofiowa/imessage-search-skill
+```
+Restart Codex after installing so it picks up the new skill.
+
+**Option B: Clone and copy manually**
+```bash
+git clone https://github.com/josephofiowa/imessage-search-skill.git
+cp -r imessage-search-skill ~/.codex/skills/imessage-search
+```
+
+**Option C: Use npx skills (Vercel's skill installer)**
+```bash
+npx skills add josephofiowa/imessage-search-skill
+```
+
+After installing with any method, restart Codex, then ask:
+```
+Search my iMessages for conversations about [whatever you're looking for]
+```
+
+**Important Codex settings for this skill:**
+
+This skill needs to run Python scripts on your local machine and read your Messages database. You'll need to run Codex locally (not Codex Cloud) and use an approval mode that allows script execution:
+
+```bash
+# Recommended: auto-approve with workspace-level sandbox
+codex --full-auto --sandbox workspace-write
+
+# Or if you prefer to approve each step manually
+codex --ask-for-approval on-request
+```
+
+If Codex asks about sandboxing or network access, note that this skill runs entirely offline — it reads a local database and writes local files. No network access is needed.
 
 ### Using with other LLMs
 
