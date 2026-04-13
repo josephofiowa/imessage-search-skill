@@ -2,7 +2,10 @@
 
 **tl;dr this is the iMessage search you wish Apple made**
 
-`imessage-search-skill` is LLM skill that lets you search your entire iMessage history using natural language. Describe what you're looking for — a half-remembered conversation ("Who did I talk to about visiting my office last month?"), a specific thing someone said ("When did [number] and I plan on biking?"), a person you texted about a topic — and the LLM finds it.
+`imessage-search-skill` is LLM skill that lets you search your entire iMessage history using natural language. Describe what you're looking for and the LLM finds it, e.g.:
+- a half-remembered conversation ("What restaurant did I get recommended to eat at last fall in Des Moines?")
+- a specific thing someone said ("When did [number] and I plan on biking?")
+- a person you texted about a topic ("Who did I talk to about visiting my office last month?")
 
 **Messages remain local to your machine.** The skill also does not connect to Contacts, so you must reference conversations/people by phone number.
 
@@ -12,13 +15,13 @@
 
 This is a **skill** — a set of instructions and scripts that an LLM (like Claude, Codex, or others) reads to know how to help you with a specific task. **Think of it like a recipe card that teaches the AI how to search your text messages.**
 
-You don't need to understand the code. The LLM handles everything.
+Simply say, "Claude, search my iMessages for [describe your conversation]" and it will trigger once installed.
 
 ## What can it do?
 
 Ask things like:
 
-- *"I want to find a conversation with someone that I can't remember their name or number. I haven't spoken to them in the last three months. I met them within the last three years. We've exchanged fewer than 30 messages total. Messages may have been about camera, visiting my office, and/or mechanical keyboards."*
+- *"I want to find a conversation with someone that I can't remember their name or number. I haven't spoken to them in the last three months. I met them within the last two years. We've exchanged fewer than 30 messages total. Messages may have been about camera, visiting my office, and/or mechanical keyboards."*
 
 - *"Help me find every time the number 2019561346 and I texted about Maine. Please return the contents of every message that mentions Maine."*
 
